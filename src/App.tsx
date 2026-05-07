@@ -13,9 +13,9 @@ const PAGE_SIZE = 10;
 
 function VideoCardSkeleton() {
   return (
-    <Card className="overflow-hidden p-0 animate-pulse">
+    <Card className="overflow-hidden rounded-xl p-0 animate-pulse">
       <div className="aspect-video w-full bg-border" />
-      <div className="border-t border-border px-3 py-2">
+      <div className="border-t border-border px-3 py-3">
         <div className="h-3 w-32 rounded bg-border" />
       </div>
     </Card>
@@ -137,8 +137,8 @@ export default function App() {
               {initialLoading
                 ? Array.from({ length: 6 }).map((_, i) => <VideoCardSkeleton key={i} />)
                 : history.map((item) => (
-                    <Card key={item.name} className="group overflow-hidden p-0 transition-shadow hover:shadow-md">
-                      <div className="relative aspect-video w-full overflow-hidden bg-black">
+                    <Card key={item.name} className="group overflow-hidden rounded-xl p-0 transition-shadow hover:shadow-md">
+                      <div className="aspect-video w-full overflow-hidden bg-black">
                         <video
                           src={item.signedUrl}
                           controls
@@ -146,7 +146,7 @@ export default function App() {
                           className="block h-full w-full object-contain"
                         />
                       </div>
-                      <div className="border-t border-border px-3 py-2 text-xs text-fg-muted">
+                      <div className="border-t border-border px-3 py-3 text-xs text-fg-muted">
                         {new Date(item.created).toLocaleString(undefined, {
                           dateStyle: "medium",
                           timeStyle: "short",

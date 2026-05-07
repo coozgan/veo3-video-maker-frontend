@@ -63,7 +63,7 @@ export function JobStatus({ operationName, result, error }: Props) {
   }
 
   return (
-    <Card className="overflow-hidden p-0">
+    <Card className="overflow-hidden rounded-xl p-0">
       <video
         src={result.videoUrl}
         controls
@@ -71,7 +71,7 @@ export function JobStatus({ operationName, result, error }: Props) {
         loop
         className="block w-full bg-black"
       />
-      <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
+      <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-4">
         <span className="text-sm text-fg-muted">Your video is ready.</span>
         <a href={result.videoUrl} download>
           <Button variant="outline" size="sm" type="button">
