@@ -65,8 +65,16 @@ export interface HistoryItem {
   signedUrl: string;
 }
 
-export async function listHistory(): Promise<HistoryItem[]> {
-  return checked(await fetch(`${API_URL}/api/history`, { headers: headers() }));
+export interface HistoryPage {
+  items: HistoryItem[];
+  total: number;
+  hasMore: boolean;
+}
+
+export async function listHistory(limit = 10, offset = 0): Promise<HistoryPage> {
+  return checked(
+    await fetch(`${API_URL}/api/history?limit=${limit}&offset=${offset}`, { headers: headers() })
+  );
 }
 
 /** Read a File as a base64 string (without the data: prefix). */

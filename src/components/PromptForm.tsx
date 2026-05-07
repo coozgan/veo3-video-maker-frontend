@@ -1,5 +1,11 @@
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
+import { Film, Image as ImageIcon, Sparkles, Type, Volume2 } from "lucide-react";
 import { fileToBase64, GenerateMode, GenerateParams } from "../api";
+import { Button } from "./ui/Button";
+import { FileDropzone } from "./ui/FileDropzone";
+import { Select } from "./ui/Select";
+import { Tabs, TabItem } from "./ui/Tabs";
+import { Toggle } from "./ui/Toggle";
 
 interface Props {
   onSubmit: (params: GenerateParams) => void;
@@ -13,6 +19,12 @@ interface ImageField {
 
 const emptyImage = (): ImageField => ({ file: null, preview: null });
 
+const TABS: TabItem<GenerateMode>[] = [
+  { value: "text", label: "Text", icon: <Type size={14} /> },
+  { value: "image", label: "Image", icon: <ImageIcon size={14} /> },
+  { value: "frames", label: "Frames", icon: <Film size={14} /> },
+];
+
 export function PromptForm({ onSubmit, disabled }: Props) {
   const [prompt, setPrompt] = useState("");
   const [mode, setMode] = useState<GenerateMode>("text");
@@ -25,26 +37,11 @@ export function PromptForm({ onSubmit, disabled }: Props) {
   const [lastFrame, setLastFrame] = useState<ImageField>(emptyImage());
   const [error, setError] = useState<string | null>(null);
 
-  const imageRef = useRef<HTMLInputElement>(null);
-  const firstRef = useRef<HTMLInputElement>(null);
-  const lastRef = useRef<HTMLInputElement>(null);
-
   function handleModeChange(next: GenerateMode) {
     setMode(next);
     setError(null);
-    // Image-to-video doesn't support Lite — auto-switch to Fast
     if (next === "image" && tier === "lite") setTier("fast");
     if (next !== "image" && tier === "fast") setTier("lite");
-  }
-
-  function handleFile(
-    e: React.ChangeEvent<HTMLInputElement>,
-    setter: (v: ImageField) => void
-  ) {
-    const file = e.target.files?.[0] ?? null;
-    if (!file) { setter(emptyImage()); return; }
-    const preview = URL.createObjectURL(file);
-    setter({ file, preview });
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -74,152 +71,118 @@ export function PromptForm({ onSubmit, disabled }: Props) {
     }
   }
 
+  const placeholder =
+    mode === "text"
+      ? "Describe your video in detail…"
+      : mode === "image"
+      ? "Describe how to animate this image…"
+      : "Describe the motion between frames…";
+
   const canSubmit = !disabled && prompt.trim().length > 0;
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Mode selector */}
-      <div style={{ display: "flex", gap: 8 }}>
-        {(["text", "image", "frames"] as GenerateMode[]).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => handleModeChange(m)}
-            disabled={disabled}
-            style={{
-              padding: "6px 16px",
-              borderRadius: 4,
-              border: "1px solid #888",
-              background: mode === m ? "#333" : "#fff",
-              color: mode === m ? "#fff" : "#333",
-              cursor: "pointer",
-              fontWeight: mode === m ? 600 : 400,
-            }}
-          >
-            {m === "text" ? "Text → Video" : m === "image" ? "Image → Video" : "First + Last Frames"}
-          </button>
-        ))}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <Tabs items={TABS} value={mode} onChange={handleModeChange} disabled={disabled} />
+
+      <div>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder={placeholder}
+          rows={4}
+          disabled={disabled}
+          className="w-full resize-y rounded-xl border border-border bg-surface px-4 py-3 text-sm text-fg placeholder:text-fg-subtle transition-colors hover:border-border-strong focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60"
+        />
       </div>
 
-      {/* Prompt */}
-      <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder={
-          mode === "text"
-            ? "Describe your video…"
-            : mode === "image"
-            ? "Describe how to animate this image…"
-            : "Describe the motion between frames…"
-        }
-        rows={3}
-        disabled={disabled}
-        style={{ width: "100%", resize: "vertical", padding: 8, fontSize: 15, boxSizing: "border-box" }}
-      />
-
-      {/* Image upload — mode=image */}
       {mode === "image" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <label style={{ fontWeight: 500 }}>
-            Source image (JPEG or PNG)
-            <input
-              ref={imageRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              onChange={(e) => handleFile(e, setImage)}
-              disabled={disabled}
-              style={{ display: "block", marginTop: 4 }}
-            />
-          </label>
-          {image.preview && (
-            <img src={image.preview} alt="preview" style={{ maxHeight: 160, objectFit: "contain", borderRadius: 4 }} />
-          )}
-        </div>
+        <FileDropzone
+          label="Source image"
+          file={image.file}
+          preview={image.preview}
+          onChange={(file, preview) => setImage({ file, preview })}
+          disabled={disabled}
+        />
       )}
 
-      {/* Frame uploads — mode=frames */}
       {mode === "frames" && (
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <label style={{ fontWeight: 500 }}>
-              First frame *
-              <input
-                ref={firstRef}
-                type="file"
-                accept="image/jpeg,image/png"
-                onChange={(e) => handleFile(e, setFirstFrame)}
-                disabled={disabled}
-                style={{ display: "block", marginTop: 4 }}
-              />
-            </label>
-            {firstFrame.preview && (
-              <img src={firstFrame.preview} alt="first frame" style={{ marginTop: 6, maxHeight: 140, objectFit: "contain", borderRadius: 4 }} />
-            )}
-          </div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <label style={{ fontWeight: 500 }}>
-              Last frame (optional)
-              <input
-                ref={lastRef}
-                type="file"
-                accept="image/jpeg,image/png"
-                onChange={(e) => handleFile(e, setLastFrame)}
-                disabled={disabled}
-                style={{ display: "block", marginTop: 4 }}
-              />
-            </label>
-            {lastFrame.preview && (
-              <img src={lastFrame.preview} alt="last frame" style={{ marginTop: 6, maxHeight: 140, objectFit: "contain", borderRadius: 4 }} />
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Options row */}
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <label>
-          Tier&nbsp;
-          <select value={tier} onChange={(e) => setTier(e.target.value as typeof tier)} disabled={disabled}>
-            {/* Lite not available for image-to-video */}
-            {mode !== "image" && <option value="lite">Lite (~$0.05/s)</option>}
-            <option value="fast">Fast (~$0.10/s)</option>
-            <option value="standard">Standard (~$0.35/s)</option>
-          </select>
-        </label>
-
-        <label>
-          Duration&nbsp;
-          <select value={duration} onChange={(e) => setDuration(Number(e.target.value) as typeof duration)} disabled={disabled}>
-            <option value={4}>4s</option>
-            <option value={6}>6s</option>
-            <option value={8}>8s</option>
-          </select>
-        </label>
-
-        <label>
-          Aspect ratio&nbsp;
-          <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value as typeof aspectRatio)} disabled={disabled}>
-            <option value="16:9">16:9 (landscape)</option>
-            <option value="9:16">9:16 (portrait)</option>
-          </select>
-        </label>
-
-        <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <input
-            type="checkbox"
-            checked={generateAudio}
-            onChange={(e) => setGenerateAudio(e.target.checked)}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FileDropzone
+            label="First frame"
+            file={firstFrame.file}
+            preview={firstFrame.preview}
+            onChange={(file, preview) => setFirstFrame({ file, preview })}
             disabled={disabled}
           />
-          Audio
-        </label>
+          <FileDropzone
+            label="Last frame"
+            optional
+            file={lastFrame.file}
+            preview={lastFrame.preview}
+            onChange={(file, preview) => setLastFrame({ file, preview })}
+            disabled={disabled}
+          />
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Select
+          label="Tier"
+          value={tier}
+          onChange={(e) => setTier(e.target.value as typeof tier)}
+          disabled={disabled}
+        >
+          {mode !== "image" && <option value="lite">Lite</option>}
+          <option value="fast">Fast</option>
+          <option value="standard">Standard</option>
+        </Select>
+
+        <Select
+          label="Duration"
+          value={duration}
+          onChange={(e) => setDuration(Number(e.target.value) as typeof duration)}
+          disabled={disabled}
+        >
+          <option value={4}>4 seconds</option>
+          <option value={6}>6 seconds</option>
+          <option value={8}>8 seconds</option>
+        </Select>
+
+        <Select
+          label="Aspect ratio"
+          value={aspectRatio}
+          onChange={(e) => setAspectRatio(e.target.value as typeof aspectRatio)}
+          disabled={disabled}
+        >
+          <option value="16:9">16:9 — landscape</option>
+          <option value="9:16">9:16 — portrait</option>
+        </Select>
       </div>
 
-      {error && <p style={{ color: "red", margin: 0 }}>{error}</p>}
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Toggle
+          checked={generateAudio}
+          onChange={setGenerateAudio}
+          disabled={disabled}
+          label={
+            <span className="inline-flex items-center gap-1.5">
+              <Volume2 size={14} className="text-fg-muted" />
+              Generate audio
+            </span>
+          }
+        />
 
-      <button type="submit" disabled={!canSubmit} style={{ padding: "8px 24px", width: "fit-content" }}>
-        {disabled ? "Generating…" : "Generate"}
-      </button>
+        <Button type="submit" size="lg" disabled={!canSubmit}>
+          <Sparkles size={16} />
+          {disabled ? "Generating…" : "Generate video"}
+        </Button>
+      </div>
+
+      {error && (
+        <div className="rounded-lg border border-danger/40 bg-danger-soft px-3 py-2 text-sm text-danger">
+          {error}
+        </div>
+      )}
     </form>
   );
 }

@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-canvas: hsl(0 0% 99%);
+  --color-surface: hsl(0 0% 100%);
+  --color-surface-elevated: hsl(0 0% 100%);
+  --color-border: hsl(240 6% 90%);
+  --color-border-strong: hsl(240 6% 82%);
+  --color-fg: hsl(240 10% 8%);
+  --color-fg-muted: hsl(240 5% 45%);
+  --color-fg-subtle: hsl(240 5% 60%);
+  --color-accent: hsl(243 75% 58%);
+  --color-accent-hover: hsl(243 75% 52%);
+  --color-accent-fg: hsl(0 0% 100%);
+  --color-accent-soft: hsl(243 80% 96%);
+  --color-danger: hsl(0 72% 51%);
+  --color-danger-soft: hsl(0 80% 96%);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+:root.dark {
+  --color-canvas: hsl(240 8% 5%);
+  --color-surface: hsl(240 6% 9%);
+  --color-surface-elevated: hsl(240 6% 11%);
+  --color-border: hsl(240 5% 17%);
+  --color-border-strong: hsl(240 5% 24%);
+  --color-fg: hsl(0 0% 96%);
+  --color-fg-muted: hsl(240 5% 65%);
+  --color-fg-subtle: hsl(240 5% 50%);
+  --color-accent: hsl(243 80% 66%);
+  --color-accent-hover: hsl(243 80% 72%);
+  --color-accent-fg: hsl(0 0% 100%);
+  --color-accent-soft: hsl(243 50% 18%);
+  --color-danger: hsl(0 80% 65%);
+  --color-danger-soft: hsl(0 50% 18%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+}
+
+/* Indeterminate progress bar */
+@keyframes indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.bar-indeterminate {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-border);
+}
+
+.bar-indeterminate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 33%;
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  animation: indeterminate 1.6s ease-in-out infinite;
+}
