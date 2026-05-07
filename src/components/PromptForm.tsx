@@ -120,16 +120,16 @@ export function PromptForm({ onSubmit, disabled }: Props) {
             }
           }
           base.klingMultiPrompt = klingShots.map((s) => ({ prompt: s.prompt.trim(), duration: s.duration }));
-        } else {
-          // Single-shot can include first/last frames.
-          if (klingFirst.file) {
-            base.imageBase64 = await fileToBase64(klingFirst.file);
-            base.imageMimeType = klingFirst.file.type;
-          }
-          if (klingLast.file) {
-            base.lastFrameBase64 = await fileToBase64(klingLast.file);
-            base.lastFrameMimeType = klingLast.file.type;
-          }
+        }
+
+        // First frame works in both single- and multi-shot. Last frame is single-shot only.
+        if (klingFirst.file) {
+          base.imageBase64 = await fileToBase64(klingFirst.file);
+          base.imageMimeType = klingFirst.file.type;
+        }
+        if (!klingMultiShots && klingLast.file) {
+          base.lastFrameBase64 = await fileToBase64(klingLast.file);
+          base.lastFrameMimeType = klingLast.file.type;
         }
 
         onSubmit(base);
@@ -244,7 +244,8 @@ export function PromptForm({ onSubmit, disabled }: Props) {
         />
       )}
 
-      {/* === Kling: single-shot frame uploads === */}
+      {/* === Kling: frame uploads ===
+          Single-shot supports first + last. Multi-shot supports first only (kie.ai limitation). */}
       {mode === "kling" && !klingMultiShots && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FileDropzone
@@ -265,6 +266,22 @@ export function PromptForm({ onSubmit, disabled }: Props) {
             }}
             disabled={disabled || !klingFirst.file}
           />
+        </div>
+      )}
+
+      {mode === "kling" && klingMultiShots && (
+        <div className="flex flex-col gap-1.5">
+          <FileDropzone
+            label="Reference first frame"
+            optional
+            file={klingFirst.file}
+            preview={klingFirst.preview}
+            onChange={(file, preview) => setKlingFirst({ file, preview })}
+            disabled={disabled}
+          />
+          <p className="text-xs text-fg-subtle">
+            Sets the visual style for shot 1. Last frame isn't supported in multi-shot mode.
+          </p>
         </div>
       )}
 
