@@ -37,11 +37,13 @@ export function PromptForm({ onSubmit, disabled }: Props) {
   const [lastFrame, setLastFrame] = useState<ImageField>(emptyImage());
   const [error, setError] = useState<string | null>(null);
 
+  // Effective tier: Lite is never valid for image-to-video, force Fast.
+  const effectiveTier = mode === "image" && tier === "lite" ? "fast" : tier;
+
   function handleModeChange(next: GenerateMode) {
     setMode(next);
     setError(null);
     if (next === "image" && tier === "lite") setTier("fast");
-    if (next !== "image" && tier === "fast") setTier("lite");
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -49,7 +51,7 @@ export function PromptForm({ onSubmit, disabled }: Props) {
     setError(null);
     if (!prompt.trim()) return;
 
-    const base: GenerateParams = { prompt: prompt.trim(), mode, tier, duration, aspectRatio, generateAudio };
+    const base: GenerateParams = { prompt: prompt.trim(), mode, tier: effectiveTier, duration, aspectRatio, generateAudio };
 
     try {
       if (mode === "image") {
@@ -128,7 +130,7 @@ export function PromptForm({ onSubmit, disabled }: Props) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Select
           label="Tier"
-          value={tier}
+          value={effectiveTier}
           onChange={(e) => setTier(e.target.value as typeof tier)}
           disabled={disabled}
         >
