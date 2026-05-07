@@ -43,11 +43,14 @@ export async function generate(params: GenerateParams): Promise<{ operationName:
 }
 
 export type JobState = "running" | "done" | "failed";
+export type Provider = "veo" | "wan";
 
 export interface StatusResult {
   state: JobState;
   videoUrl?: string;
   error?: string;
+  provider?: Provider;
+  failover?: boolean;
 }
 
 export async function pollStatus(op: string, signal?: AbortSignal): Promise<StatusResult> {

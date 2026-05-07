@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { generate, GenerateParams, HistoryItem, listHistory } from "./api";
 import { JobStatus } from "./components/JobStatus";
 import { PromptForm } from "./components/PromptForm";
@@ -138,13 +138,19 @@ export default function App() {
                 ? Array.from({ length: 6 }).map((_, i) => <VideoCardSkeleton key={i} />)
                 : history.map((item) => (
                     <Card key={item.name} className="group overflow-hidden rounded-xl p-0 transition-shadow hover:shadow-md">
-                      <div className="aspect-video w-full overflow-hidden bg-black">
+                      <div className="relative aspect-video w-full overflow-hidden bg-black">
                         <video
                           src={item.signedUrl}
                           controls
                           preload="metadata"
                           className="block h-full w-full object-contain"
                         />
+                        {item.name.endsWith("/wan.mp4") && (
+                          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-accent-soft/95 px-2 py-0.5 text-[11px] font-medium text-accent backdrop-blur">
+                            <Sparkles size={10} />
+                            Wan 2.7
+                          </span>
+                        )}
                       </div>
                       <div className="border-t border-border px-3 py-3 text-xs text-fg-muted">
                         {new Date(item.created).toLocaleString(undefined, {
