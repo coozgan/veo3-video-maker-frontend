@@ -145,9 +145,14 @@ export default function App() {
                           preload="metadata"
                           className="block h-full w-full object-contain"
                         />
-                        {item.name.endsWith("/wan.mp4") && (
+                        {item.name.endsWith("/kling.mp4") && (
                           <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-accent-soft/95 px-2 py-0.5 text-[11px] font-medium text-accent backdrop-blur">
                             <Sparkles size={10} />
+                            Kling 3.0
+                          </span>
+                        )}
+                        {item.name.endsWith("/wan.mp4") && (
+                          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-fg/10 px-2 py-0.5 text-[11px] font-medium text-fg-muted backdrop-blur">
                             Wan 2.7
                           </span>
                         )}
