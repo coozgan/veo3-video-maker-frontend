@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { pollStatus, StatusResult } from "../api";
 
+const POLL_INTERVAL_MS = 8_000;
+const POLL_INTERVAL_SLOW_MS = 15_000;
+const SLOW_AFTER_MS = 60_000;
+const MAX_TRANSIENT_RETRIES = 3;
+
 export function usePolling(operationName: string | null) {
   const [result, setResult] = useState<StatusResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAt = useRef<number | null>(null);
+  const transientFailures = useRef(0);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -16,6 +22,7 @@ export function usePolling(operationName: string | null) {
   useEffect(() => {
     if (!operationName) return;
     startedAt.current = Date.now();
+    transientFailures.current = 0;
     setResult(null);
     setError(null);
 
@@ -23,15 +30,32 @@ export function usePolling(operationName: string | null) {
       abortRef.current = new AbortController();
       try {
         const res = await pollStatus(operationName!, abortRef.current.signal);
+        transientFailures.current = 0;
+
         setResult(res);
+
         if (res.state === "running") {
           const elapsed = Date.now() - (startedAt.current ?? 0);
-          const delay = elapsed > 60_000 ? 15_000 : 8_000;
+          const delay = elapsed > SLOW_AFTER_MS ? POLL_INTERVAL_SLOW_MS : POLL_INTERVAL_MS;
           timerRef.current = setTimeout(tick, delay);
         }
+        // "done" and "failed" are both terminal — stop polling.
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return;
-        setError(err instanceof Error ? err.message : String(err));
+
+        transientFailures.current += 1;
+
+        if (transientFailures.current <= MAX_TRANSIENT_RETRIES) {
+          // Exponential backoff: 2s, 4s, 8s
+          const backoff = Math.pow(2, transientFailures.current) * 1_000;
+          timerRef.current = setTimeout(tick, backoff);
+        } else {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Lost connection to the server. Please refresh and check your history."
+          );
+        }
       }
     }
 
